@@ -2,7 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
+from django.views.decorators.csrf import csrf_exempt
 
 @api_view(['POST'])
 def UserCreateApi(request):
@@ -27,9 +28,21 @@ def UserCreateApi(request):
 
 @api_view(['POST'])
 def UserLoginApi(request):
-    username = request.POST.get('username')
-    password = request.POST.get('password')
+    """
+    Log in a user.
+    """
+    username = request.data.get('username')  # Use request.data instead of request.POST
+    password = request.data.get('password')  # Use request.data instead of request.POST
+
     user = authenticate(username=username, password=password)
     if user is not None:
-        login(request, user)
-        return Response({'message': 'User logged in successfully'}, status=status.HTTP_200_OK)
+        login(request, user)  # Log the user in
+        return Response({'message': 'User  logged in successfully'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)  # Return error for failed login
+@api_view(['GET'])
+def ProtectedUsersApi(request):
+    if request.user.is_authenticated:
+        return Response({'message': 'Hello, authenticated user!'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'You are not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
