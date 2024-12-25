@@ -1,5 +1,5 @@
 from django.urls import path
-from .api import BookListApi, BookCreateApi, BookUpdateApi, BookDeleteApi
+from .views import BookListApi, BookCreateApi, BookUpdateApi, BookDeleteApi
 
 
 
