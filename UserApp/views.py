@@ -42,6 +42,20 @@ def UserLoginApi(request):
         return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)  # Return error for failed login
 @api_view(['GET'])
 def ProtectedUsersApi(request):
+    """
+    The function `ProtectedUsersApi` checks if the user is authenticated and returns a message
+    accordingly.
+
+    :param request: The `request` parameter in the `ProtectedUsersApi` function is typically an object
+    that contains information about the incoming HTTP request, such as the user making the request, the
+    request method (GET, POST, etc.), request headers, request data, and other relevant information. In
+    this context, it
+    :return: The `ProtectedUsersApi` function is returning a response based on the authentication status
+    of the user making the request. If the user is authenticated, it returns a JSON response with a
+    message saying "Hello, authenticated user!" and a status code of 200 (OK). If the user is not
+    authenticated, it returns a JSON response with an error message saying "You are not authenticated"
+    and a status
+    """
     if request.user.is_authenticated:
         return Response({'message': 'Hello, authenticated user!'}, status=status.HTTP_200_OK)
     else:
