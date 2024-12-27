@@ -27,23 +27,23 @@ def UserCreateApi(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
-def UserLoginApi(request):
-    """
-    Log in a user.
-    """
-    username = request.data.get('username')  # Use request.data instead of request.POST
-    password = request.data.get('password')  # Use request.data instead of request.POST
+# @api_view(['POST'])
+# def UserLoginApi(request):
+#     """
+#     Log in a user.
+#     """
+#     username = request.data.get('username')  # Use request.data instead of request.POST
+#     password = request.data.get('password')  # Use request.data instead of request.POST
 
-    user = authenticate(username=username, password=password)
-    if user is not None:
-        login(request, user)  # Log the user in
+#     user = authenticate(username=username, password=password)
+#     if user is not None:
+#         login(request, user)  # Log the user in
 
-        token,created = Token.objects.get_or_create(user=user)
-        return Response({'message': 'User  logged in successfully',
-                         'token':token.key}, status=status.HTTP_200_OK)
-    else:
-        return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)  # Return error for failed login
+#         token,created = Token.objects.get_or_create(user=user)
+#         return Response({'message': 'User  logged in successfully',
+#                          'token':token.key}, status=status.HTTP_200_OK)
+#     else:
+#         return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)  # Return error for failed login
 @api_view(['GET'])
 def ProtectedUsersApi(request):
     if request.user.is_authenticated:
