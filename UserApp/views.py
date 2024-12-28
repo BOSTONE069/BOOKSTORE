@@ -2,9 +2,10 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.views.decorators.csrf import csrf_exempt
 
 @api_view(['POST'])
 def UserCreateApi(request):
@@ -27,25 +28,31 @@ def UserCreateApi(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['POST'])
-# def UserLoginApi(request):
-#     """
-#     Log in a user.
-#     """
-#     username = request.data.get('username')  # Use request.data instead of request.POST
-#     password = request.data.get('password')  # Use request.data instead of request.POST
+@api_view(['POST'])
+@csrf_exempt  # Consider the security implications of this decorator
+def UserLoginApi(request):
+    """
+    Log in a user and return JWT tokens.
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
 
-#     user = authenticate(username=username, password=password)
-#     if user is not None:
-#         login(request, user)  # Log the user in
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
-#         token,created = Token.objects.get_or_create(user=user)
-#         return Response({'message': 'User  logged in successfully',
-#                          'token':token.key}, status=status.HTTP_200_OK)
-#     else:
-#         return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)  # Return error for failed login
 @api_view(['GET'])
 def ProtectedUsersApi(request):
+    """
+    A protected API endpoint that requires authentication.
+    """
     if request.user.is_authenticated:
         return Response({'message': 'Hello, authenticated user!',
                          'username': request.user.username}, status=status.HTTP_200_OK)
