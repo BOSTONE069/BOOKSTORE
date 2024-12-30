@@ -6,7 +6,10 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
 
+# Create your views here.
 @api_view(['POST'])
 def UserCreateApi(request):
     """
@@ -49,12 +52,11 @@ def UserLoginApi(request):
         return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def ProtectedUsersApi(request):
     """
     A protected API endpoint that requires authentication.
     """
-    if request.user.is_authenticated:
-        return Response({'message': 'Hello, authenticated user!',
+
+    return Response({'message': 'Hello, authenticated user!',
                          'username': request.user.username}, status=status.HTTP_200_OK)
-    else:
-        return Response({'error': 'You are not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
