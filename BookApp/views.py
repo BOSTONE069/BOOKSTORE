@@ -56,3 +56,42 @@ from rest_framework.viewsets import ModelViewSet
 class BookViewSet(ModelViewSet):
     queryset = BookModel.objects.all()
     serializer_class = BookSerializer
+
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new book and return a success message.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            {'message': 'Book created successfully', 'data': serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
+    def update(self, request, *args, **kwargs):
+        """
+        Update an existing book and return a success message.
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(
+            {'message': 'Book updated successfully', 'data': serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete a book and return a success message.
+        """
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {'message': 'Book deleted successfully'},
+            status=status.HTTP_204_NO_CONTENT
+        )
