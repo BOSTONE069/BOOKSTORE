@@ -1,97 +1,52 @@
-from rest_framework.decorators import api_view
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from .models import BookModel
-from .serializers import BookSerializer  # Assuming a serializer is created for BookModel
-from rest_framework.viewsets import ModelViewSet
-# @api_view(['GET'])
-# def BookListApi(request):
-#     """
-#     Retrieve a list of all books.
-#     """
-#     books = BookModel.objects.all()
-#     serializer = BookSerializer(books, many=True)
-#     return Response(serializer.data)
-
-# @api_view(['POST'])
-# def BookCreateApi(request):
-#     """
-#     Create a new book.
-#     """
-#     serializer = BookSerializer(data=request.data)
-#     if serializer.is_valid():
-#         book = serializer.save()
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(['PUT'])
-# def BookUpdateApi(request, id):
-#     """
-#     Update an existing book by ID.
-#     """
-#     try:
-#         book = BookModel.objects.get(id=id)
-#     except BookModel.DoesNotExist:
-#         return Response({'error': 'Book not found'}, status=status.HTTP_404_NOT_FOUND)
-
-#     serializer = BookSerializer(book, data=request.data, partial=True)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(['DELETE'])
-# def BookDeleteApi(request, id):
-#     """
-#     Delete a book by ID.
-#     """
-#     try:
-#         book = BookModel.objects.get(id=id)
-#         book.delete()
-#         return Response({'message': 'Book deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-#     except BookModel.DoesNotExist:
-#         return Response({'error': 'Book not found'}, status=status.HTTP_404_NOT_FOUND)
-
+from .serializers import BookSerializer
 
 class BookViewSet(ModelViewSet):
-    queryset = BookModel.objects.all()
     serializer_class = BookSerializer
+    permission_classes = [IsAuthenticated]  # Ensure the user is logged in for all actions
 
-    def create(self, request, *args, **kwargs):
+    def get_queryset(self):
         """
-        Create a new book and return a success message.
+        Override the queryset to return only books belonging to the logged-in user.
         """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            {'message': 'Book created successfully', 'data': serializer.data},
-            status=status.HTTP_201_CREATED,
-            headers=headers
-        )
+        return BookModel.objects.filter(author=self.request.user)
 
-    def update(self, request, *args, **kwargs):
+    def perform_create(self, serializer):
         """
-        Update an existing book and return a success message.
+        Override the create method to set the logged-in user as the author of the book.
         """
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(
-            {'message': 'Book updated successfully', 'data': serializer.data},
-            status=status.HTTP_200_OK
-        )
+        serializer.save(author=self.request.user)
 
-    def destroy(self, request, *args, **kwargs):
+    def check_ownership(self, instance):
         """
-        Delete a book and return a success message.
+        Centralized method to check if the logged-in user is the creator of the book.
+        """
+        if instance.author != self.request.user:
+            return Response(
+                {'error': 'You do not have permission to perform this action.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return None
+
+    def perform_update(self, serializer):
+        """
+        Override the update method to ensure only the creator of the book can update it.
         """
         instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response(
-            {'message': 'Book deleted successfully'},
-            status=status.HTTP_204_NO_CONTENT
-        )
+        ownership_check = self.check_ownership(instance)
+        if ownership_check:
+            return ownership_check
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """
+        Override the destroy method to ensure only the creator of the book can delete it.
+        """
+        ownership_check = self.check_ownership(instance)
+        if ownership_check:
+            return ownership_check
+        instance.delete()
