@@ -100,7 +100,7 @@ REST_FRAMEWORK = {
         #'rest_framework.authentication.TokenAuthentication'
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
-    'PAGE_SIZE': 2
+
 }
 
 # Password validation
