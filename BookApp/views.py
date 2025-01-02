@@ -4,10 +4,17 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import BookModel
 from .serializers import BookSerializer
+from rest_framework.pagination import PageNumberPagination
+
+class CustomPagination(PageNumberPagination):
+    page_size = 2  # Number of items per page
+    page_size_query_param = 'page_size'  # Allows client to override the page size
+    max_page_size = 100  # Maximum limit for page size
 
 class BookViewSet(ModelViewSet):
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]  # Ensure the user is logged in for all actions
+    pagination_class = CustomPagination  # Use the custom pagination class
 
     def get_queryset(self):
         """
